@@ -39,5 +39,7 @@ pytest>=7.4.0
 # Streamlit
 streamlit>=1.28.0
 
+opencv-python>=4.8.0
+
 # Remove medclip - it's not available on PyPI
 # medclip will be installed from GitHub in the app
