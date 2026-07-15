@@ -35,6 +35,11 @@
 | **📜 Analysis History** | Track all analyses in your session |
 
 ---
+---
+## 🚀 Live Demo
+
+[![Launch App](https://img.shields.io/badge/Launch_App-Streamlit-ff4b4b?style=for-the-badge&logo=streamlit)](https://wrist-fracture-detection-x5tspcfstp7oyvuipxzybh.streamlit.app/)
+---
 
 ## 🏗️ Architecture
 
