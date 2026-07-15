@@ -1,5 +1,3 @@
-cd '/Users/israelm/Desktop/DATA SCIENCE/1. NOW/4.DEEP-LEARNING-2/wrist-fracture-detection'
-cat > streamlit_app_simple.py << 'EOF'
 """
 WristVision AI - Simplified Streamlit App
 Wrist Fracture Detection with Grad-CAM Explainability
