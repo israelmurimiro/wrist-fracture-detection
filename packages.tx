@@ -1,2 +1,3 @@
-# System dependencies for Streamlit Cloud
-# (No additional packages needed for now)
+libgl1-mesa-glx
+libglib2.0-0
+
