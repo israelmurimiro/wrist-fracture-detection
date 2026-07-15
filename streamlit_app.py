@@ -14,11 +14,73 @@ import pandas as pd
 import streamlit as st
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from PIL import Image, UnidentifiedImageError
-from pytorch_grad_cam import GradCAM
-from pytorch_grad_cam.utils.image import show_cam_on_image
 from torchvision import transforms
 from torchvision.models import resnet50
+import matplotlib.pyplot as plt
+
+
+# ============================================================
+# CUSTOM GRAD-CAM (no OpenCV / pytorch-grad-cam)
+# ============================================================
+
+class GradCAM:
+    """Lightweight Grad-CAM using PyTorch hooks and PIL for resizing."""
+    def __init__(self, model, target_layers):
+        self.model = model
+        self.target_layers = target_layers
+        self.activations = None
+        self.gradients = None
+        self.hooks = []
+
+        def forward_hook(module, inp, outp):
+            self.activations = outp
+
+        def backward_hook(module, grad_in, grad_out):
+            self.gradients = grad_out[0]
+
+        for layer in target_layers:
+            self.hooks.append(layer.register_forward_hook(forward_hook))
+            self.hooks.append(layer.register_backward_hook(backward_hook))
+
+    def __call__(self, input_tensor, targets):
+        self.model.zero_grad()
+        output = self.model(input_tensor)
+        target = targets[0](output) if callable(targets[0]) else output[0, targets[0]]
+        target.backward(retain_graph=True)
+
+        # Global average pooling of gradients
+        weights = self.gradients.mean(dim=(2, 3), keepdim=True)  # [1, C, 1, 1]
+        cam = (weights * self.activations).sum(dim=1, keepdim=True)  # [1, 1, H, W]
+        cam = F.relu(cam)                           # apply ReLU
+        cam = cam - cam.min()
+        cam = cam / (cam.max() + 1e-8)              # normalize to [0,1]
+        return cam.squeeze().detach().cpu().numpy()  # 2D heatmap
+
+    def remove_hooks(self):
+        for h in self.hooks:
+            h.remove()
+
+
+def show_cam_on_image(img: np.ndarray, mask: np.ndarray) -> np.ndarray:
+    """
+    Overlay a heatmap on an RGB image (both in [0,1] range).
+    Returns a uint8 RGB image.
+    """
+    # Resize mask to image size using PIL
+    h, w = img.shape[:2]
+    mask_pil = Image.fromarray(np.uint8(255 * mask), mode='L')
+    mask_resized = mask_pil.resize((w, h), Image.Resampling.BILINEAR)
+    mask_resized = np.array(mask_resized) / 255.0
+
+    # Create heatmap using matplotlib's jet colormap
+    heatmap = plt.cm.jet(mask_resized)[:, :, :3]  # (H, W, 3) in [0,1]
+
+    # Blend with original image
+    alpha = 0.6
+    blended = alpha * heatmap + (1 - alpha) * img
+    return np.uint8(255 * np.clip(blended, 0, 1))
 
 
 # ============================================================
@@ -303,17 +365,10 @@ def create_gradcam(
     input_tensor: torch.Tensor,
     target_idx: int,
 ) -> np.ndarray:
-    def target_fn(output):
-        return output[target_idx]
-    
-    with GradCAM(
-        model=model,
-        target_layers=[model.layer4[-1]],
-    ) as cam:
-        return cam(
-            input_tensor=input_tensor,
-            targets=[target_fn],
-        )[0]
+    cam = GradCAM(model=model, target_layers=[model.layer4[-1]])
+    heatmap = cam(input_tensor, targets=[lambda out: out[0, target_idx]])
+    cam.remove_hooks()
+    return heatmap  # 2D numpy array in [0,1]
 
 
 def create_overlay(
@@ -324,11 +379,7 @@ def create_overlay(
     if heatmap is None:
         return (image_array * 255).astype(np.uint8)
     
-    overlay = show_cam_on_image(
-        image_array,
-        heatmap,
-        use_rgb=True,
-    ).astype(np.float32) / 255.0
+    overlay = show_cam_on_image(image_array, heatmap).astype(np.float32) / 255.0
 
     blended = (
         (1.0 - intensity) * image_array
