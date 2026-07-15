@@ -177,4 +177,3 @@ else:
 
 st.divider()
 st.caption("WristVision AI · Educational Research Use Only")
-EOF
