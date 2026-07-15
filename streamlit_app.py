@@ -76,7 +76,6 @@ def load_model():
     if not model_path.exists():
         st.info("📥 Downloading model... This may take a minute.")
         
-        # Try downloading from GitHub raw URL
         url = "https://github.com/israelmurimiro/wrist-fracture-detection/raw/main/models/checkpoints/baseline_resnet50.pth"
         
         try:
@@ -218,11 +217,10 @@ if uploaded is not None:
         st.divider()
         st.subheader("📊 Class Probabilities")
         prob_cols = st.columns(3)
-        colors = ['#e74c3c', '#95a5a6', '#3498db']
         for i, name in enumerate(CLASS_NAMES):
             with prob_cols[i]:
                 st.metric(name, f"{probs[i]:.1%}")
-                st.progress(probs[i])
+                st.progress(float(probs[i]))  # FIXED: Convert to float
         
         # Technical details
         with st.expander("📋 Technical Details"):
