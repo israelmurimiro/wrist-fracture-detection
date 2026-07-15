@@ -89,7 +89,7 @@ def show_cam_on_image(img: np.ndarray, mask: np.ndarray) -> np.ndarray:
 
 st.set_page_config(
     page_title="WristVision AI",
-    page_icon="🦴",
+    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded",
 )
