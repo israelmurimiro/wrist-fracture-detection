@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wrist Fracture Detection</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d1117;
+            color: #e6edf3;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #58a6ff, #f0883e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: #8b949e;
+            margin-top: 6px;
+            font-size: 15px;
+        }
+
+        /* Input Row */
+        .input-row {
+            display: flex;
+            gap: 12px;
+            background: #161b22;
+            border-radius: 12px;
+            border: 1px solid #30363d;
+            overflow: hidden;
+        }
+
+        .input-row .file-label {
+            flex: 1;
+            padding: 14px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #8b949e;
+            font-size: 14px;
+            min-height: 54px;
+        }
+
+        .input-row .file-label .filename {
+            color: #e6edf3;
+            font-weight: 500;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .input-row .file-label .placeholder {
+            color: #484f58;
+        }
+
+        .input-row input[type="file"] { display: none; }
+
+        .input-row .analyze-btn {
+            background: #238636;
+            color: #fff;
+            border: none;
+            padding: 14px 28px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            min-width: 100px;
+        }
+
+        .input-row .analyze-btn:hover:not(:disabled) { background: #2ea043; }
+        .input-row .analyze-btn:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
+
+        /* Preview */
+        #previewContainer {
+            display: none;
+            margin-top: 16px;
+            text-align: center;
+        }
+        #previewContainer img {
+            max-width: 100%;
+            max-height: 280px;
+            border-radius: 12px;
+            border: 1px solid #30363d;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+        .loading .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid #30363d;
+            border-top-color: #58a6ff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading p { color: #8b949e; font-size: 14px; }
+
+        /* Results */
+        #results { display: none; margin-top: 24px; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .badge-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .badge { padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+        .badge-fractura { background: #da3633; color: #fff; }
+        .badge-metal { background: #8b949e; color: #0d1117; }
+        .badge-texto { background: #1f6feb; color: #fff; }
+        .badge-normal { background: #2ea043; color: #fff; }
+        .confidence { color: #8b949e; font-size: 14px; }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .image-grid .card {
+            background: #161b22;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #30363d;
+        }
+
+        .image-grid .card .label {
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #8b949e;
+            border-bottom: 1px solid #30363d;
+            background: #0d1117;
+        }
+
+        .image-grid .card img { width: 100%; display: block; }
+
+        /* Treatment */
+        .treatment-card {
+            background: #161b22;
+            border-radius: 12px;
+            padding: 16px 20px;
+            border: 1px solid #30363d;
+            margin-top: 16px;
+        }
+
+        .treatment-card .label { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: #f0883e; }
+        .treatment-card .content {
+            color: #c9d1d9;
+            font-size: 14px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        /* Chat Section */
+        .chat-section {
+            margin-top: 24px;
+            border-top: 1px solid #21262d;
+            padding-top: 20px;
+        }
+
+        .chat-section .chat-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #8b949e;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .chat-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-row input {
+            flex: 1;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #e6edf3;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .chat-row input:focus { border-color: #58a6ff; }
+
+        .chat-row button {
+            background: #1f6feb;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .chat-row button:hover { background: #388bfd; }
+        .chat-row button:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
+
+        .chat-response {
+            background: #0d1117;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 12px;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            font-size: 14px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            display: none;
+        }
+
+        /* Error */
+        .error { display: none; background: #da3633; color: #fff; padding: 12px 16px; border-radius: 10px; margin-top: 16px; font-size: 14px; }
+
+        @media (max-width: 600px) {
+            .input-row { flex-direction: column; }
+            .input-row .analyze-btn { border-radius: 0 0 12px 12px; width: 100%; }
+            .image-grid { grid-template-columns: 1fr; }
+            .chat-row { flex-direction: column; }
+            .header h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>🩻 Wrist Fracture Detection</h1>
+        <p>Upload an X-ray • Click Analyze • Ask follow-up questions</p>
+    </div>
+
+    <!-- Input Row -->
+    <div class="input-row">
+        <label class="file-label" id="fileLabel">
+            <span>📤</span>
+            <span class="placeholder" id="filePlaceholder">Choose or drag an X-ray...</span>
+            <span class="filename" id="fileName" style="display:none;"></span>
+            <input type="file" id="fileInput" accept="image/*">
+        </label>
+        <button class="analyze-btn" id="analyzeBtn" disabled>Analyze</button>
+    </div>
+
+    <!-- Preview -->
+    <div id="previewContainer"><img id="previewImg" alt="Preview"></div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Analyzing X-ray...</p>
+    </div>
+
+    <!-- Error -->
+    <div class="error" id="error"></div>
+
+    <!-- Results -->
+    <div id="results">
+        <div class="result-header">
+            <h2 style="font-size:18px;">📊 Results</h2>
+            <div class="badge-group" id="badgeGroup"></div>
+        </div>
+
+        <div class="image-grid">
+            <div class="card">
+                <div class="label">🖼️ Original</div>
+                <img id="originalImg" alt="Original">
+            </div>
+            <div class="card">
+                <div class="label">🔥 Heatmap</div>
+                <img id="heatmapImg" alt="Heatmap">
+            </div>
+        </div>
+
+        <div class="treatment-card">
+            <div class="label">💊 Clinical Summary</div>
+            <div class="content" id="treatmentText"></div>
+        </div>
+
+        <!-- Chat Section -->
+        <div class="chat-section">
+            <span class="chat-label">💬 Ask a follow-up question about this X-ray</span>
+            <div class="chat-row">
+                <input type="text" id="chatInput" placeholder="e.g., What does this fracture mean?" disabled>
+                <button id="chatBtn" disabled>Ask</button>
+            </div>
+            <div class="chat-response" id="chatResponse"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const filePlaceholder = document.getElementById('filePlaceholder');
+    const fileName = document.getElementById('fileName');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const previewContainer = document.getElementById('previewContainer');
+    const previewImg = document.getElementById('previewImg');
+    const loading = document.getElementById('loading');
+    const error = document.getElementById('error');
+    const results = document.getElementById('results');
+    const badgeGroup = document.getElementById('badgeGroup');
+    const originalImg = document.getElementById('originalImg');
+    const heatmapImg = document.getElementById('heatmapImg');
+    const treatmentText = document.getElementById('treatmentText');
+    const chatInput = document.getElementById('chatInput');
+    const chatBtn = document.getElementById('chatBtn');
+    const chatResponse = document.getElementById('chatResponse');
+
+    let selectedFile = null;
+    let isAnalyzing = false;
+    let analysisComplete = false;
+
+    // --- File selection ---
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        selectedFile = file;
+        filePlaceholder.style.display = 'none';
+        fileName.style.display = 'inline';
+        fileName.textContent = file.name;
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            previewImg.src = ev.target.result;
+            previewContainer.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+
+        analyzeBtn.disabled = false;
+        results.style.display = 'none';
+        error.style.display = 'none';
+        chatResponse.style.display = 'none';
+        analysisComplete = false;
+        chatInput.disabled = true;
+        chatBtn.disabled = true;
+    });
+
+    // --- Drag and drop ---
+    fileLabel.addEventListener('dragover', (e) => { e.preventDefault(); });
+    fileLabel.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            fileInput.files = e.dataTransfer.files;
+            fileInput.dispatchEvent(new Event('change'));
+        }
+    });
+
+    fileLabel.addEventListener('click', (e) => {
+        if (e.target.tagName !== 'INPUT') fileInput.click();
+    });
+
+    // --- Analyze ---
+    analyzeBtn.addEventListener('click', async () => {
+        if (!selectedFile || isAnalyzing) return;
+        isAnalyzing = true;
+
+        analyzeBtn.disabled = true;
+        loading.style.display = 'block';
+        results.style.display = 'none';
+        error.style.display = 'none';
+        chatResponse.style.display = 'none';
+
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        try {
+            const response = await fetch('/analyze', { method: 'POST', body: formData });
+            const data = await response.json();
+
+            if (data.error) {
+                error.textContent = '❌ ' + data.error;
+                error.style.display = 'block';
+                return;
+            }
+
+            let badges = '';
+            if (data.detected_classes.length === 0) {
+                badges = '<span class="badge badge-normal">Normal</span>';
+            } else {
+                data.detected_classes.forEach(cls => {
+                    const clsLower = cls.toLowerCase();
+                    badges += `<span class="badge badge-${clsLower}">${cls}</span>`;
+                });
+            }
+            badges += ` <span class="confidence">${(data.confidence * 100).toFixed(1)}%</span>`;
+            badgeGroup.innerHTML = badges;
+
+            originalImg.src = previewImg.src;
+            heatmapImg.src = 'data:image/png;base64,' + data.heatmap;
+            treatmentText.textContent = data.treatment;
+
+            results.style.display = 'block';
+            analysisComplete = true;
+            chatInput.disabled = false;
+            chatBtn.disabled = false;
+
+        } catch (err) {
+            error.textContent = '❌ Error: ' + err.message;
+            error.style.display = 'block';
+        } finally {
+            loading.style.display = 'none';
+            analyzeBtn.disabled = false;
+            isAnalyzing = false;
+        }
+    });
+
+    // --- Chat ---
+    chatBtn.addEventListener('click', async () => {
+        if (!analysisComplete) return;
+
+        const message = chatInput.value.trim();
+        if (!message) return;
+
+        chatBtn.disabled = true;
+        chatResponse.style.display = 'block';
+        chatResponse.textContent = 'Thinking...';
+
+        try {
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            });
+            const data = await response.json();
+            chatResponse.textContent = data.response || 'No response.';
+        } catch (err) {
+            chatResponse.textContent = 'Error: ' + err.message;
+        } finally {
+            chatBtn.disabled = false;
+            chatInput.value = '';
+        }
+    });
+
+    // Enter key for chat
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') chatBtn.click();
+    });
+</script>
+</body>
+</html>

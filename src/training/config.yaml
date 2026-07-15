@@ -1,0 +1,23 @@
+dataset:
+  name: "DETECCION DE FRACTURAS"
+  data_dir: "data/raw/"
+  image_size: 224
+  batch_size: 32
+  num_workers: 0
+model:
+  architecture: "resnet50"
+  pretrained: true
+  num_classes: 3
+training:
+  epochs: 5
+  learning_rate: 0.0001
+  optimizer: "adam"
+  loss_function: "BCEWithLogitsLoss"
+  threshold: 0.5
+device:
+  use_mps: true
+logging:
+  save_checkpoints: true
+  checkpoint_dir: "models/checkpoints/"
+evaluation:
+  metrics: ["accuracy", "precision", "recall", "f1", "auc"]
