@@ -17,7 +17,14 @@ import torch.nn as nn
 from PIL import Image, UnidentifiedImageError
 from torchvision import transforms
 from torchvision.models import resnet50
-import ollama
+
+# --- OLLAMA IMPORT WITH FALLBACK ---
+try:
+    import ollama
+    OLLAMA_AVAILABLE = True
+except ImportError:
+    OLLAMA_AVAILABLE = False
+    print("⚠️ Ollama not available. Clinical descriptions will be disabled.")
 
 # --- GRAD-CAM IMPORT WITH FALLBACK ---
 try:
@@ -31,8 +38,6 @@ except ImportError:
         GRAD_CAM_AVAILABLE = True
     except ImportError:
         GRAD_CAM_AVAILABLE = False
-
-
 # ============================================================
 # APP CONFIGURATION
 # ============================================================
