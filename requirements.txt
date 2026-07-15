@@ -21,10 +21,7 @@ grad-cam>=1.4.8
 transformers>=4.30.0
 tokenizers>=0.13.0
 
-# MedCLIP (specific version may vary)
-medclip>=0.1.0
-
-# API
+# FastAPI
 fastapi>=0.100.0
 uvicorn>=0.23.0
 python-multipart>=0.0.6
@@ -39,8 +36,8 @@ joblib>=1.2.0
 # Testing
 pytest>=7.4.0
 
-# Logging
-wandb>=0.15.0  # Optional: for experiment tracking
-
+# Streamlit
 streamlit>=1.28.0
-grad-cam>=1.4.8
+
+# Remove medclip - it's not available on PyPI
+# medclip will be installed from GitHub in the app
