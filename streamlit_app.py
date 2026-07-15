@@ -636,7 +636,7 @@ header_left, header_right = st.columns([1.35, 1], gap="large")
 
 with header_left:
     st.caption("🔵 LIVE RESEARCH PROTOTYPE")
-    st.title("🦴 WristVision AI")
+    st.title("🤖 WristVision AI")
     st.caption("BIOMEDICAL COMPUTER-VISION RESEARCH DASHBOARD BY ISRAEL MURIMIRO")  # <-- CHANGED HERE
     st.subheader("See what an AI model notices in a wrist X-ray.")
 
